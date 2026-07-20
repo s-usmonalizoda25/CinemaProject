@@ -1,0 +1,113 @@
+services:
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-user:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: userService_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d userService_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-movie:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: movieService_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d movieService_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-booking:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: bookingservice_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d bookingservice_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  user-service:
+    build: ./userServiceCinemaProject
+    environment:
+      - DB_HOST=db-user
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=userService_db
+      - REDIS_ADDR=redis:6379
+      - SERVER_PORT=50051
+    depends_on:
+      db-user:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  movie-service:
+    build: ./movieServiceCinemaProject
+    environment:
+      - DB_HOST=db-movie
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=movieService_db
+      - SERVER_PORT=50052
+    depends_on:
+      db-movie:
+        condition: service_healthy
+
+  booking-service:
+    build: ./bookingServiceCinemaProject
+    environment:
+      - DB_HOST=db-booking
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=bookingservice_db
+      - REDIS_ADDR=redis:6379
+      - SERVER_PORT=50053
+      - USER_SERVICE_ADDR=user-service:50051
+      - MOVIE_SERVICE_ADDR=movie-service:50052
+    depends_on:
+      db-booking:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+      movie-service:
+        condition: service_started
+
+  api-gateway:
+    build: ./apiGatewayCinemaProject
+    ports:
+      - "8080:8080"
+    environment:
+      - HTTP_PORT=:8080
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - USER_SERVICE_HOST=user-service
+      - USER_SERVICE_PORT=50051
+      - MOVIE_SERVICE_HOST=movie-service
+      - MOVIE_SERVICE_PORT=50052
+      - BOOKING_SERVICE_HOST=booking-service
+      - BOOKING_SERVICE_PORT=50053
+    depends_on:
+      - user-service
+      - movie-service
+      - booking-service
