@@ -17,10 +17,11 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASSWORD: guest
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connection"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 15s
 
   db-user:
     image: postgres:15-alpine
