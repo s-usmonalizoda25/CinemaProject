@@ -126,7 +126,13 @@ services:
       - MOVIE_SERVICE_PORT=50052
       - BOOKING_SERVICE_HOST=booking-service
       - BOOKING_SERVICE_PORT=50053
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
     depends_on:
-      - user-service
-      - movie-service
-      - booking-service
+      user-service:
+        condition: service_started
+      movie-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
