@@ -25,6 +25,8 @@ services:
 
   db-user:
     image: postgres:15-alpine
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -37,6 +39,8 @@ services:
 
   db-movie:
     image: postgres:15-alpine
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -49,6 +53,8 @@ services:
 
   db-booking:
     image: postgres:15-alpine
+    ports:
+      - "5434:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -69,6 +75,7 @@ services:
       - DB_NAME=userService_db
       - REDIS_ADDR=redis:6379
       - SERVER_PORT=50051
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       db-user:
         condition: service_healthy
